@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#111827">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="脱口英语">
+<meta name="description" content="脱口英语：读英文，学英语。生词本、每日复习、跟读，都在手机上。">
+<title>脱口英语</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="app-header">
+  <div class="header-text">
+    <h1>脱口英语</h1>
+    <p class="app-sub">读英文，学英语 · 今天已复习 <strong id="today-count">0</strong> 个</p>
+  </div>
+  <button id="settings-btn" class="settings-btn" aria-label="设置">⚙️</button>
+</header>
+
+<div id="settings-overlay" class="settings-overlay" hidden></div>
+<section id="settings-panel" class="settings-panel" hidden>
+  <div class="settings-drag" aria-hidden="true"><span></span></div>
+  <div class="settings-head">
+    <h2>设置</h2>
+    <button id="settings-close-btn" class="settings-close" aria-label="关闭设置">×</button>
+  </div>
+  <div class="settings-body" id="settings-body">
+  <label class="field-label" for="ai-endpoint">自定义 AI 接口地址（OpenAI 兼容）</label>
+  <input id="ai-endpoint" type="url" placeholder="例如 https://token.sensenova.cn/v1" autocomplete="off">
+  <label class="field-label" for="ai-key">接口 Key</label>
+  <input id="ai-key" type="password" placeholder="粘贴你的 Key，只存在这台手机浏览器里" autocomplete="off">
+  <button id="save-settings-btn" class="btn btn-primary">保存设置</button>
+  <p id="settings-status" class="hint"></p>
+  <p class="hint">这个接口是给以后准备的：以后对话想让 AI 自由接话才用得上。v0.2 的对话是固定剧本，不用它回话，只是先把接口留着。Key 只保存在这台手机的浏览器里（localStorage），不上传到任何地方。</p>
+  <label class="field-label" for="voice-select">朗读声音（本机英文语音）</label>
+  <select id="voice-select" class="voice-select"></select>
+  <button id="voice-test-btn" class="btn btn-outline btn-block">🔊 试听这个声音</button>
+  <button id="voice-next-btn" class="btn btn-outline btn-block">🔄 换一个声音</button>
+  <p class="hint">声音是手机系统自带的；同一台手机上一般有几个英文声音可以挑，选好就记住了。觉得默认那个女声难听，就换一个试听。</p>
+  <p class="hint">在线好声音：微软 Edge 的免费在线神经网络声音实测过，从网页里调不通（微软加了验证，浏览器调不到），所以这里只有本机声音。</p>
+  <label class="sound-row"><input id="sound-toggle" type="checkbox" checked> 完成时放烟花 +“叮”一声（音效）</label>
+  <p class="hint">音效是现场合成的，不用下载音频文件。iPhone 的 Safari 不支持网页震动，所以 iPhone 上完成时只有烟花和声音，没有震动；安卓 Chrome 上完成时还会短震一下。</p>
+  <p class="hint">关掉设置：点面板外面的灰色地方，或者点右上角的 ×，或者在面板滑到最上面时按住往下滑，都可以；点“保存设置”后也会自动关掉。面板里的内容可以上下滑动查看。</p>
+  <p class="version-line">版本 v0.9 · 脱口英语</p>
+  <button id="clear-cache-btn" class="btn btn-outline btn-block">🧹 清除缓存并重载</button>
+  </div>
+</section>
+
+<main>
+  <!-- 生词本 -->
+  <section id="tab-wordbook" class="tab-page active">
+    <p class="slogan">先开口，再记词——每天说一句，英语就敢张口了</p>
+    <form id="add-form" class="add-form">
+      <input id="add-word" type="text" placeholder="英文单词，例如 serendipity" autocomplete="off" required>
+      <input id="add-translation" type="text" placeholder="中文意思，例如 意外的惊喜" autocomplete="off" required>
+      <input id="add-source" type="text" placeholder="来源（可选），例如 X 上看到的帖子" autocomplete="off">
+      <button type="submit" class="btn btn-primary">+ 存进生词本</button>
+    </form>
+
+    <div class="wordbook-tools">
+      <button id="export-btn" class="btn btn-outline">导出 JSON</button>
+      <label class="btn btn-outline file-btn" for="import-file">导入 JSON</label>
+      <input id="import-file" type="file" accept=".json,application/json" hidden>
+      <span id="word-count" class="word-count"></span>
+    </div>
+    <p class="hint">导入：从 Chrome 扩展导出的 JSON 文件。导出：把生词本带到扩展或别的设备。</p>
+
+    <div class="pack-section">
+      <p class="pack-title">不用打字，先领词包</p>
+      <p class="hint">每个词包 10 个词，都带中文翻译和例句，点一下整包加进生词本，不用一个一个填。</p>
+      <div id="pack-list" class="pack-list"></div>
+      <p id="pack-status" class="hint" hidden></p>
+    </div>
+
+    <ul id="word-list" class="word-list"></ul>
+    <p id="wordbook-empty" class="empty" hidden>生词本还是空的。上面加一个词，或者从扩展导入，或者直接领上面的词包。</p>
+  </section>
+
+  <!-- 每日复习 -->
+  <section id="tab-review" class="tab-page">
+    <div id="review-start">
+      <p class="review-intro">每天 10 个词，点卡片翻出中文，认识就点“认识”，不认识就点“不认识”。</p>
+      <button id="start-review-btn" class="btn btn-primary btn-big">开始今日复习</button>
+    </div>
+
+    <div id="review-play" hidden>
+      <div class="progress"><div id="progress-bar" class="progress-bar"></div></div>
+      <p id="progress-text" class="progress-text"></p>
+      <div id="review-card" class="review-card" role="button" tabindex="0" aria-label="点一下翻出中文">
+        <div id="review-word" class="review-word"></div>
+        <div id="review-source" class="review-source"></div>
+        <div id="review-translation" class="review-translation" hidden></div>
+        <p id="review-tip" class="review-tip">👄 先大声读出来，再点卡片看中文</p>
+      </div>
+      <div class="review-actions">
+        <button id="mark-unknown-btn" class="btn btn-unknown">不认识</button>
+        <button id="mark-known-btn" class="btn btn-known">认识</button>
+      </div>
+      <button id="speak-review-btn" class="btn btn-outline btn-block">🔊 听一遍</button>
+    </div>
+
+    <div id="review-done" hidden>
+      <p class="done-big">今日复习完成 🎉</p>
+      <p id="review-summary" class="done-summary"></p>
+      <button id="review-again-btn" class="btn btn-primary btn-block">再来一组</button>
+      <button id="review-to-wordbook-btn" class="btn btn-outline btn-block">回生词本看看</button>
+    </div>
+  </section>
+
+  <!-- 跟读 -->
+  <section id="tab-practice" class="tab-page">
+    <label class="field-label" for="practice-select">选一个词跟读</label>
+    <select id="practice-select" class="practice-select"></select>
+    <div class="practice-word-box">
+      <div id="practice-word" class="practice-word">—</div>
+      <div id="practice-translation" class="practice-translation">—</div>
+    </div>
+    <button id="practice-speak-btn" class="btn btn-primary btn-big btn-block">🔊 听原音</button>
+    <button id="practice-record-btn" class="btn btn-record btn-big btn-block">● 开始录音</button>
+    <p id="practice-status" class="practice-status">先听一遍，再录下自己的声音，对比着听。</p>
+    <audio id="practice-player" controls class="practice-player" hidden></audio>
+    <p class="hint">录音只保存在这台手机上，不上传、不打分。录音要在 https 网址或本机打开时才能用（部署到 Workers 上就可以）。</p>
+  </section>
+
+  <!-- 情景对话 -->
+  <section id="tab-dialog" class="tab-page">
+    <p class="dialog-note">先跟读，再自己说，录下来自己听。iPhone 的 Safari 没有语音识别接口，做不了实时听写打分，这里不打分——你的声音只录给自己听。</p>
+
+    <div id="dialog-picker">
+      <p class="review-intro">选一个情景，跟着练 8 句话：</p>
+      <div id="scenario-list" class="scenario-list"></div>
+    </div>
+
+    <div id="dialog-play" hidden>
+      <div class="dialog-head">
+        <div>
+          <div id="dialog-title" class="dialog-title"></div>
+          <div id="dialog-progress" class="progress-text"></div>
+        </div>
+        <button id="dialog-change-btn" class="btn btn-outline btn-mini">换情景</button>
+      </div>
+      <div class="progress"><div id="dialog-progress-bar" class="progress-bar"></div></div>
+      <div id="dialog-turn" class="dialog-turn"></div>
+      <div id="dialog-actions" class="dialog-actions"></div>
+      <audio id="dialog-player" controls class="practice-player" hidden></audio>
+    </div>
+
+    <div id="dialog-done" hidden>
+      <p class="done-big">这个情景练完了 🎉</p>
+      <p id="dialog-summary" class="done-summary"></p>
+      <p class="hint">多练几遍，试着不看建议回答，自己组织一句话说出来。</p>
+      <button id="dialog-again-btn" class="btn btn-primary btn-block">再来一遍</button>
+      <button id="dialog-back-btn" class="btn btn-outline btn-block">换个情景</button>
+    </div>
+  </section>
+</main>
+
+<nav class="tab-bar" aria-label="底部导航">
+  <button class="tab-btn active" data-tab="wordbook">📖<span>生词本</span></button>
+  <button class="tab-btn" data-tab="review">🗂️<span>复习</span></button>
+  <button class="tab-btn" data-tab="practice">🎙️<span>跟读</span></button>
+  <button class="tab-btn" data-tab="dialog">💬<span>对话</span></button>
+</nav>
+
+<canvas id="celebrate-canvas" aria-hidden="true"></canvas>
+<div id="cheer-text" class="cheer-text" aria-hidden="true"></div>
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+<script src="app.js"></script>
+</body>
+</html>

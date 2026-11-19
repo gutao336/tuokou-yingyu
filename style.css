@@ -1,0 +1,585 @@
+/* 脱口英语 v0.5 — 手机优先，大按钮，大字，单手能操作 */
+:root {
+  --bg: #F7F5F1;
+  --surface: #FFFFFF;
+  --ink: #1A1A1A;
+  --ink-light: #4A4A4A;
+  --ink-muted: #7A7A7A;
+  --navy: #111827;
+  --gold: #C9A227;
+  --gold-dark: #8A6D1B;
+  --border: #E8E0D8;
+  --green: #1A7F37;
+  --green-bg: #E6F4EA;
+  --red: #B3261E;
+  --red-bg: #FCE8E6;
+  --radius: 14px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* v0.5 加固：hidden 属性永远不能被别的 display 规则盖掉，不然面板关了还显示 */
+[hidden] { display: none !important; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans SC",
+    "Microsoft YaHei", "Noto Sans SC", sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  line-height: 1.7;
+  max-width: 560px;
+  margin: 0 auto;
+  padding: 0 16px calc(84px + env(safe-area-inset-bottom, 0px));
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ---------- 顶栏 ---------- */
+.app-header { padding: 20px 4px 8px; }
+.app-header h1 { font-size: 28px; line-height: 1.3; letter-spacing: -0.02em; }
+.app-sub { font-size: 15px; color: var(--ink-light); margin-top: 4px; }
+.app-sub strong { color: var(--gold-dark); }
+
+/* ---------- 页面切换 ---------- */
+.tab-page { display: none; padding-top: 12px; }
+.tab-page.active { display: block; }
+
+/* ---------- 按钮 ---------- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 52px;
+  padding: 12px 20px;
+  border: 0;
+  border-radius: var(--radius);
+  font-size: 17px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  text-align: center;
+  line-height: 1.4;
+  transition: transform 0.12s ease, filter 0.12s ease, background-color 0.15s ease, border-color 0.15s ease;
+}
+.btn:active, .btn.pressing { transform: scale(0.94); filter: brightness(0.82); }
+.btn-primary { background: var(--navy); color: #fff; width: 100%; }
+.btn-outline { background: var(--surface); color: var(--ink); border: 1.5px solid var(--border); }
+.btn-big { min-height: 60px; font-size: 18px; }
+.btn-block { width: 100%; margin-top: 12px; }
+
+/* ---------- 生词本 ---------- */
+.add-form { display: flex; flex-direction: column; gap: 10px; }
+.add-form input {
+  width: 100%;
+  min-height: 52px;
+  padding: 12px 14px;
+  font-size: 17px;
+  font-family: inherit;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--ink);
+}
+.add-form input:focus { outline: 2px solid var(--gold); border-color: var(--gold); }
+
+.wordbook-tools {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin: 16px 0 8px;
+}
+.wordbook-tools .btn { min-height: 46px; padding: 10px 16px; font-size: 15px; }
+.file-btn { cursor: pointer; }
+.word-count { margin-left: auto; font-size: 15px; color: var(--ink-muted); }
+
+.hint { font-size: 14px; color: var(--ink-muted); line-height: 1.6; margin: 6px 0 12px; }
+
+.word-list { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+.word-item {
+  position: relative;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+}
+.word-item .word-line { display: flex; align-items: baseline; gap: 10px; padding-right: 36px; }
+.word-item .w { font-size: 20px; font-weight: 700; word-break: break-word; }
+.word-item .t { font-size: 16px; color: var(--ink-light); word-break: break-word; }
+.word-item .meta { font-size: 13px; color: var(--ink-muted); margin-top: 4px; }
+/* v0.9：每张卡片一行只留两个大按钮（听一遍 + 跟读），等宽等高不换行。
+   以前四个按钮挤在一行，手机屏窄字一多就换行、高低不齐，看着像竖着乱排。
+   两个按钮一人一半，15px 的字加 emoji 也绰绰有余，white-space 不折行。 */
+.word-item .row-actions { display: flex; gap: 8px; margin-top: 10px; }
+.word-item .row-actions .btn { min-height: 46px; padding: 8px 10px; font-size: 15px; flex: 1; min-width: 0; white-space: nowrap; }
+/* v0.9：例句不再是按钮，改成词下面一行小字链接，点一下展开、再点收起。 */
+.example-link {
+  background: none;
+  border: none;
+  padding: 8px 0 0;
+  font-size: 14px;
+  font-family: inherit;
+  color: var(--gold-dark);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+  text-align: left;
+}
+/* v0.9：删除不再是按钮，改成卡片右上角一个小 ×，点一下就删，不再弹窗确认。 */
+.word-del {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 32px;
+  height: 32px;
+  min-height: 32px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  background: var(--surface);
+  font-size: 18px;
+  line-height: 1;
+  color: var(--ink-light);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.word-del:active { transform: scale(0.9); background: var(--bg); }
+
+.empty { text-align: center; color: var(--ink-muted); padding: 32px 16px; font-size: 16px; }
+
+/* ---------- 复习 ---------- */
+.review-intro { font-size: 17px; color: var(--ink-light); margin-bottom: 16px; }
+.progress {
+  height: 10px;
+  background: var(--border);
+  border-radius: 999px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+.progress-bar { height: 100%; width: 0; background: var(--gold); transition: width 0.25s ease; }
+.progress-text { font-size: 15px; color: var(--ink-muted); margin-bottom: 12px; }
+
+.review-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  min-height: 220px;
+  padding: 28px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  cursor: pointer;
+  user-select: none;
+}
+.review-word { font-size: 34px; font-weight: 800; line-height: 1.3; word-break: break-word; }
+.review-source { font-size: 14px; color: var(--ink-muted); margin-top: 8px; }
+.review-translation {
+  margin-top: 18px;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--gold-dark);
+  border-top: 1px dashed var(--border);
+  padding-top: 16px;
+  width: 100%;
+  word-break: break-word;
+}
+.review-tip { font-size: 14px; color: var(--ink-muted); margin-top: 16px; }
+
+.review-actions { display: flex; gap: 12px; margin-top: 16px; }
+.review-actions .btn { flex: 1; min-height: 60px; font-size: 18px; }
+.btn-known { background: var(--green-bg); color: var(--green); border: 1.5px solid var(--green); }
+.btn-unknown { background: var(--red-bg); color: var(--red); border: 1.5px solid var(--red); }
+
+.done-big { font-size: 24px; font-weight: 800; text-align: center; margin: 32px 0 8px; }
+.done-summary { font-size: 17px; color: var(--ink-light); text-align: center; margin-bottom: 20px; }
+
+/* ---------- 跟读 ---------- */
+.field-label { display: block; font-size: 16px; font-weight: 700; margin-bottom: 8px; }
+.practice-select {
+  width: 100%;
+  min-height: 54px;
+  padding: 12px 14px;
+  font-size: 17px;
+  font-family: inherit;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--ink);
+}
+.practice-word-box {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  text-align: center;
+  padding: 28px 16px;
+  margin: 16px 0;
+}
+.practice-word { font-size: 32px; font-weight: 800; line-height: 1.3; word-break: break-word; }
+.practice-translation { font-size: 18px; color: var(--ink-light); margin-top: 10px; }
+.btn-record { background: var(--red); color: #fff; }
+.btn-record.recording { background: var(--navy); }
+.practice-status { text-align: center; font-size: 15px; color: var(--ink-light); margin-top: 12px; }
+.practice-player { width: 100%; margin-top: 16px; }
+
+/* ---------- 底部 Tab ---------- */
+.tab-bar {
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: 0;
+  width: 100%;
+  max-width: 560px;
+  display: flex;
+  background: rgba(255, 255, 255, 0.96);
+  border-top: 1px solid var(--border);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  z-index: 100;
+}
+.tab-btn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 10px 0 8px;
+  border: 0;
+  background: none;
+  font-size: 22px;
+  font-family: inherit;
+  color: var(--ink-muted);
+  cursor: pointer;
+  min-height: 64px;
+  transition: transform 0.12s ease, color 0.15s ease;
+}
+.tab-btn:active, .tab-btn.pressing { transform: scale(0.94); filter: brightness(0.85); }
+.tab-btn span { font-size: 13px; font-weight: 600; }
+.tab-btn.active { color: var(--gold-dark); }
+
+/* ---------- 提示 ---------- */
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: calc(92px + env(safe-area-inset-bottom, 0px));
+  transform: translateX(-50%) translateY(8px);
+  background: var(--navy);
+  color: #fff;
+  font-size: 16px;
+  padding: 12px 20px;
+  border-radius: 999px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease, transform 0.25s ease;
+  max-width: calc(100vw - 32px);
+  text-align: center;
+  z-index: 200;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ---------- v0.2：设置 ---------- */
+.app-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.header-text { flex: 1; min-width: 0; }
+.settings-btn {
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  font-size: 22px;
+  cursor: pointer;
+  transition: transform 0.12s ease, background-color 0.15s ease;
+}
+.settings-btn:active, .settings-btn.pressing { transform: scale(0.94); background: var(--bg); filter: brightness(0.9); }
+/* ---------- v0.8：设置遮罩层 ---------- */
+/* 全屏半透明遮罩：设置打开时盖住面板以外的所有地方，点遮罩任意处就关面板。
+   面板本身 z-index 比遮罩高一层，始终能点到；遮罩只管“外面”，面板里面不受影响。 */
+.settings-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(17, 24, 39, 0.45);
+  z-index: 1000;
+}
+.settings-panel {
+  position: relative;
+  z-index: 1001;
+  /* v0.9：面板外壳只管拖动条和标题那块 chrome（touch-action: pan-x，竖向拖动
+     不交给页面滚动，下滑手势才能收到 pointermove）。内容区自己滚，
+     见下面 .settings-body——v0.8 把 pan-x 放在整块面板上，内容滚不动，
+     底下的版本号和清缓存按钮够不着，这就是那次的毛病。 */
+  touch-action: pan-x;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 16px;
+  margin-top: 12px;
+}
+/* ---------- v0.9：设置面板内容区自己能滚 ---------- */
+/* 内容装进 .settings-body：overflow-y 自己滚，touch-action: pan-y，
+   手指上下滑就是滚内容，不再被下滑手势抢走；overscroll-behavior: contain
+   让滚到底/顶时不带动外面的页面一起动。max-height 留出标题栏和页眉的
+   位置，375px 宽的手机上版本号和清缓存按钮滚一滚就能看见。 */
+.settings-body {
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  touch-action: pan-y;
+  max-height: calc(100vh - 220px);
+  max-height: calc(100dvh - 220px);
+}
+.settings-panel h2 { font-size: 20px; margin-bottom: 12px; }
+.settings-panel input {
+  width: 100%;
+  min-height: 52px;
+  padding: 12px 14px;
+  font-size: 16px;
+  font-family: inherit;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--ink);
+  margin-bottom: 10px;
+}
+.settings-panel input:focus { outline: 2px solid var(--gold); border-color: var(--gold); }
+.settings-panel .btn { margin-top: 4px; }
+
+/* ---------- v0.8：口语主标语 ---------- */
+/* 首页/生词本顶部的口语主标语：产品主线是“先开口”，一眼就要看见。 */
+.slogan {
+  font-size: 17px;
+  font-weight: 800;
+  line-height: 1.5;
+  color: var(--gold-dark);
+  text-align: center;
+  margin: 2px 0 12px;
+}
+
+/* ---------- v0.2：例句 ---------- */
+.examples { margin-top: 12px; border-top: 1px dashed var(--border); padding-top: 12px; }
+.examples-empty { font-size: 15px; color: var(--ink-light); margin-bottom: 10px; }
+.example-item {
+  background: var(--bg);
+  border: 1px solid var(--border-light);
+  border-radius: 10px;
+  padding: 12px 14px;
+  margin-bottom: 10px;
+}
+.example-en { font-size: 17px; font-weight: 700; line-height: 1.5; word-break: break-word; }
+.example-zh { font-size: 15px; color: var(--ink-light); margin-top: 4px; line-height: 1.6; }
+.example-item .row-actions { margin-top: 10px; }
+.example-item .row-actions .btn { flex: 0 0 auto; }
+.example-player { width: 100%; margin-top: 10px; }
+.own-form { display: flex; flex-direction: column; gap: 8px; margin-top: 4px; }
+.own-form-title { font-size: 15px; font-weight: 700; }
+.own-form input {
+  width: 100%;
+  min-height: 48px;
+  padding: 10px 12px;
+  font-size: 16px;
+  font-family: inherit;
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--ink);
+}
+.own-form input:focus { outline: 2px solid var(--gold); border-color: var(--gold); }
+.btn-mini { min-height: 42px !important; padding: 8px 14px !important; font-size: 15px !important; }
+.btn-outline.recording { background: var(--navy); color: #fff; border-color: var(--navy); }
+
+/* ---------- v0.2：对话 ---------- */
+.dialog-note {
+  background: #FFF8E1;
+  border: 1px solid #E5D9A8;
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  font-size: 15px;
+  line-height: 1.7;
+  margin-bottom: 16px;
+}
+.scenario-list { display: flex; flex-direction: column; gap: 12px; }
+.scenario-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  width: 100%;
+  text-align: left;
+  padding: 18px;
+  cursor: pointer;
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  font-family: inherit;
+  color: var(--ink);
+  transition: transform 0.12s ease, border-color 0.15s ease;
+}
+.scenario-card:active, .scenario-card.pressing { transform: scale(0.94); border-color: var(--gold); filter: brightness(0.94); }
+.scenario-title { font-size: 19px; font-weight: 800; }
+.scenario-desc { font-size: 15px; color: var(--ink-light); line-height: 1.6; }
+.scenario-meta { font-size: 13px; color: var(--ink-muted); margin-top: 4px; }
+.dialog-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 8px; }
+.dialog-title { font-size: 20px; font-weight: 800; }
+.dialog-turn {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 22px 18px;
+  margin-top: 12px;
+}
+.turn-who { font-size: 14px; font-weight: 700; color: var(--gold-dark); margin-bottom: 8px; }
+.turn-en { font-size: 22px; font-weight: 700; line-height: 1.5; word-break: break-word; }
+.turn-zh { font-size: 16px; color: var(--ink-light); margin-top: 8px; line-height: 1.7; }
+.turn-app { border-left: 4px solid var(--gold); }
+.turn-user { border-left: 4px solid var(--green); }
+.dialog-actions { display: flex; flex-direction: column; }
+.dialog-actions .hint { text-align: center; margin-top: 10px; }
+
+/* ---------- v0.3：成就感反馈 ---------- */
+/* 烟花画布：盖住全屏但不挡操作 */
+#celebrate-canvas {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 300;
+}
+/* 鼓励语：屏幕中间弹一句，1.8 秒自己收 */
+.cheer-text {
+  position: fixed;
+  left: 50%;
+  top: 38%;
+  transform: translate(-50%, -50%) scale(0.8);
+  font-size: clamp(24px, 7vw, 30px);
+  font-weight: 800;
+  color: var(--gold-dark);
+  background: rgba(255, 255, 255, 0.94);
+  padding: 14px 24px;
+  border-radius: 999px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.16);
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 301;
+}
+.cheer-text.show { animation: cheer-pop 1.8s ease forwards; }
+@keyframes cheer-pop {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(0.7); }
+  15% { opacity: 1; transform: translate(-50%, -50%) scale(1.05); }
+  25% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  75% { opacity: 1; transform: translate(-50%, -58%) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -62%) scale(1); }
+}
+/* 音效开关行 */
+.sound-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 16px;
+  font-weight: 700;
+  margin: 6px 0 4px;
+}
+.sound-row input { width: 22px; height: 22px; accent-color: var(--gold-dark); }
+/* 复习卡片点按也有轻微反馈 */
+.review-card { transition: transform 0.12s ease; }
+.review-card:active, .review-card.pressing { transform: scale(0.96); filter: brightness(0.96); }
+
+/* ---------- v0.4：每次点按都看得见（涟漪 + 重按下） ---------- */
+/* v0.3 的 :active 在 iPhone Safari 上基本看不出来，所以涟漪和 .pressing 由 JS 做，:active 只当兜底 */
+.btn, .tab-btn, .scenario-card, .review-card, .settings-btn, .settings-close, .file-btn, .pack-card {
+  position: relative;
+  overflow: hidden;
+  touch-action: manipulation;
+}
+.ripple {
+  position: absolute;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(201, 162, 39, 0.38) 0%, rgba(201, 162, 39, 0.14) 55%, rgba(201, 162, 39, 0) 70%);
+  transform: scale(0);
+  pointer-events: none;
+  z-index: 0;
+  animation: ripple-out 0.35s ease-out forwards;
+}
+.ripple-light {
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.45) 0%, rgba(255, 255, 255, 0.16) 55%, rgba(255, 255, 255, 0) 70%);
+}
+@keyframes ripple-out {
+  to { transform: scale(1); opacity: 0; }
+}
+
+/* ---------- v0.4：设置面板的关法 ---------- */
+.settings-drag { display: flex; justify-content: center; padding: 2px 0 10px; touch-action: none; cursor: pointer; }
+.settings-drag span { width: 44px; height: 5px; border-radius: 999px; background: var(--border); }
+.settings-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.settings-head h2 { margin-bottom: 0; }
+.settings-close {
+  width: 44px;
+  height: 44px;
+  min-height: 44px;
+  padding: 0;
+  border: 1.5px solid var(--border);
+  border-radius: 50%;
+  background: var(--surface);
+  font-size: 24px;
+  line-height: 1;
+  color: var(--ink-light);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: transform 0.12s ease, background-color 0.15s ease;
+}
+.settings-close:active, .settings-close.pressing { transform: scale(0.92); background: var(--bg); }
+/* 滑动关掉时面板跟着手指走一点（JS 设 transform），松手不够远就弹回来 */
+.settings-panel.swiping { transition: none; }
+
+/* ---------- v0.4：朗读声音选择器 ---------- */
+.voice-select {
+  width: 100%;
+  min-height: 54px;
+  padding: 12px 14px;
+  font-size: 16px;
+  font-family: inherit;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--ink);
+  margin-bottom: 10px;
+}
+.voice-select:focus { outline: 2px solid var(--gold); border-color: var(--gold); }
+
+/* ---------- v0.5：版本号 + 词包 ---------- */
+/* 设置面板底部的小字版本号：以后一眼就能看出打开的是不是新版，缓存旧版藏不住 */
+.version-line { font-size: 13px; color: var(--ink-muted); text-align: center; margin: 14px 0 0; }
+
+/* 词包：一张卡片就是一包词，点一下整包加入 */
+.pack-section { margin: 18px 0 8px; }
+.pack-title { font-size: 17px; font-weight: 800; margin-bottom: 2px; }
+.pack-list { display: flex; flex-direction: column; gap: 10px; margin-top: 10px; }
+.pack-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  width: 100%;
+  text-align: left;
+  padding: 14px 16px;
+  cursor: pointer;
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  font-family: inherit;
+  color: var(--ink);
+  transition: transform 0.12s ease, border-color 0.15s ease;
+}
+.pack-card:active, .pack-card.pressing { transform: scale(0.96); border-color: var(--gold); filter: brightness(0.96); }
+.pack-card:disabled { opacity: 0.6; cursor: default; }
+.pack-card-title { font-size: 18px; font-weight: 800; }
+.pack-card-desc { font-size: 15px; color: var(--ink-light); line-height: 1.6; }
+.pack-card-meta { font-size: 14px; font-weight: 700; color: var(--gold-dark); margin-top: 2px; }
